@@ -20,13 +20,15 @@ type HTTPServer struct {
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
 }
 
-func MustLoad() *Config {
+func EnvLoad() {
 	err := godotenv.Load("local.env")
 
 	if err != nil {
 		log.Fatalf("Error loading .env file: %s", err.Error())
 	}
+}
 
+func MustLoad() *Config {
 	configPath := os.Getenv("CONFIG_PATH")
 
 	if configPath == "" {
