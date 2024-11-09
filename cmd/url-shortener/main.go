@@ -4,6 +4,8 @@ import (
 	"log/slog"
 	"os"
 	"url_shortner/internal/config"
+	"url_shortner/internal/lib/logger/sl"
+	"url_shortner/internal/storage/sqlite"
 )
 
 func main() {
@@ -16,7 +18,36 @@ func main() {
 	log.Info("starting server", slog.String("env", cfg.Env))
 	log.Debug("debug logging enabled")
 
-	// TODO: init storage: sqllite
+	storage, err := sqlite.NewStorage(cfg.StoragePath)
+	if err != nil {
+		log.Error("failed to create storage", sl.Err(err))
+		os.Exit(1)
+	}
+
+	//id, err := storage.SaveURL("https://google.com", "google")
+	//if err != nil {
+	//	log.Error("failed to save url", sl.Err(err))
+	//	os.Exit(1)
+	//}
+
+	//log.Info("saved url", slog.Int64("id", id))
+
+	//err = storage.DeleteURL("google")
+	//if err != nil {
+	//	log.Error("failed to delete url", sl.Err(err))
+	//	os.Exit(1)
+	//}
+
+	//alias, err := storage.GetURL("google")
+	//if err != nil {
+	//	log.Error("failed to get url alias", sl.Err(err))
+	//  os.Exit(1)
+	//}
+	//
+	//log.Info("getted alias from 'google'", slog.String("alias", alias))
+
+	_ = storage
+
 	// TODO: init router: chi + net/http, render
 	// TODO: run server
 }
