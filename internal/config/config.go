@@ -20,23 +20,27 @@ type HTTPServer struct {
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
 }
 
-func EnvLoad() {
+const AliasLength = 6
+
+func MustLoad() *Config {
+	if err := os.Chdir("../../"); err != nil {
+		log.Fatalf("Failed to change directory: %v", err)
+	}
+
 	err := godotenv.Load("local.env")
 
 	if err != nil {
 		log.Fatalf("Error loading .env file: %s", err.Error())
 	}
-}
 
-func MustLoad() *Config {
 	configPath := os.Getenv("CONFIG_PATH")
 
 	if configPath == "" {
-		log.Panic("CONFIG_PATH environment variable not set")
+		log.Fatal("CONFIG_PATH environment variable not set")
 	}
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		log.Panicf("CONFIG_PATH does not exist: %s", err.Error())
+		log.Fatalf("CONFIG_PATH does not exist: %s", err.Error())
 	}
 
 	var cfg Config

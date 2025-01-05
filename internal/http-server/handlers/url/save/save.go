@@ -1,12 +1,17 @@
 package save
 
 import (
+	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
+	"github.com/go-playground/validator/v10"
 	"log/slog"
 	"net/http"
+	"url_shortner/internal/config"
 	"url_shortner/internal/lib/api/response"
 	"url_shortner/internal/lib/logger/sl"
+	"url_shortner/internal/lib/random"
+	"url_shortner/internal/storage"
 )
 
 type Request struct {
@@ -45,5 +50,32 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 		}
 
 		log.Info("request body decoded", slog.Any("request", req))
+
+		if err := validator.New().Struct(req); err != nil {
+			var validateErr validator.ValidationErrors
+
+			errors.As(err, &validateErr)
+
+			log.Error("failed to validate request", sl.Err(err))
+
+			render.JSON(w, r, response.ValidationError(validateErr))
+
+			return
+		}
+
+		alias := req.Alias
+		if alias == "" {
+			alias = random.NewRandomString(config.AliasLength)
+			// TODO: check duplicate
+		}
+
+		_, err = urlSaver.Save(req.URL, alias)
+		if errors.Is(err, storage.ErrURLExists) {
+			log.Info("url already exists", sl.Err(err))
+
+			render.JSON(w, r, response.Error("url already exists"))
+
+			return
+		}
 	}
 }

@@ -12,9 +12,13 @@ import (
 	"url_shortner/internal/storage/sqlite"
 )
 
-func main() {
-	config.EnvLoad()
+const (
+	envLocal = "local"
+	envDev   = "dev"
+	envProd  = "prod"
+)
 
+func main() {
 	cfg := config.MustLoad()
 
 	log := setupLogger(cfg.Env)
@@ -22,13 +26,11 @@ func main() {
 	log.Info("starting server", slog.String("env", cfg.Env))
 	log.Debug("debug logging enabled")
 
-	storage, err := sqlite.NewStorage(cfg.StoragePath)
+	_, err := sqlite.NewStorage(cfg.StoragePath)
 	if err != nil {
 		log.Error("failed to create storage", sl.Err(err))
 		os.Exit(1)
 	}
-
-	_ = storage
 
 	router := chi.NewRouter()
 
@@ -41,12 +43,6 @@ func main() {
 	// TODO: init router: chi + net/http, render
 	// TODO: run server
 }
-
-const (
-	envLocal = "local"
-	envDev   = "dev"
-	envProd  = "prod"
-)
 
 func setupLogger(env string) *slog.Logger {
 	var log *slog.Logger
