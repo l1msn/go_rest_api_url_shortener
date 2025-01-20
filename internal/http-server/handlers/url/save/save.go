@@ -26,7 +26,8 @@ type Response struct {
 }
 
 type URLSaver interface {
-	Save(urlToSave string, alias string) (int64, error)
+	SaveURL(urlToSave string, alias string) (int64, error)
+	CheckAliasExist(alias string) (bool, error)
 }
 
 func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
@@ -65,11 +66,27 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 
 		alias := req.Alias
 		if alias == "" {
-			alias = random.NewRandomString(config.AliasLength)
-			// TODO: check duplicate
+			for {
+				alias = random.NewRandomString(config.AliasLength)
+
+				isExistAlias, err := urlSaver.CheckAliasExist(alias)
+
+				if err != nil {
+					log.Error("failed to check alias exist", sl.Err(err))
+
+					return
+				}
+
+				if !isExistAlias {
+					break
+				} else {
+					log.Warn("regenerating alias", sl.Err(err))
+				}
+			}
 		}
 
-		_, err = urlSaver.Save(req.URL, alias)
+		id, err := urlSaver.SaveURL(req.URL, alias)
+
 		if errors.Is(err, storage.ErrURLExists) {
 			log.Info("url already exists", sl.Err(err))
 
@@ -77,5 +94,24 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 
 			return
 		}
+
+		if err != nil {
+			log.Error("failed to save url", sl.Err(err))
+
+			render.JSON(w, r, response.Error("failed to save url"))
+
+			return
+		}
+
+		log.Info("url saved", slog.Int64("id", id))
+
+		responseOK(w, r, alias)
 	}
+}
+
+func responseOK(w http.ResponseWriter, r *http.Request, alias string) {
+	render.JSON(w, r, Response{
+		Status: response.StatusOK,
+		Alias:  alias,
+	})
 }
