@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"url_shortner/internal/config"
+	"url_shortner/internal/http-server/handlers/url/get"
 	"url_shortner/internal/http-server/handlers/url/save"
 	"url_shortner/internal/http-server/middleware/logger"
 	"url_shortner/internal/lib/logger/handlers/slogpretty"
@@ -45,7 +46,10 @@ func main() {
 	// TODO: init router: chi + net/http, render
 	// TODO: run server
 
-	router.Post("/url", save.New(log, storage))
+	router.Route("/url", func(r chi.Router) {
+		r.Post("/", save.New(log, storage))
+		r.Get("/{alias}", get.Get(log, storage))
+	})
 
 	log.Info("starting server", slog.String("address", cfg.Address))
 
