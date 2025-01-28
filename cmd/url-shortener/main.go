@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"url_shortner/internal/config"
+	delete "url_shortner/internal/http-server/handlers/url/delete"
 	"url_shortner/internal/http-server/handlers/url/get"
 	"url_shortner/internal/http-server/handlers/url/save"
 	"url_shortner/internal/http-server/middleware/logger"
@@ -49,6 +50,7 @@ func main() {
 	router.Route("/url", func(r chi.Router) {
 		r.Post("/", save.New(log, storage))
 		r.Get("/{alias}", get.Get(log, storage))
+		r.Delete("/", delete.Delete(log, storage))
 	})
 
 	log.Info("starting server", slog.String("address", cfg.Address))

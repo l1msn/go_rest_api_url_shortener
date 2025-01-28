@@ -2,6 +2,7 @@ package save
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
@@ -74,14 +75,33 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 				if err != nil {
 					log.Error("failed to check alias exist", sl.Err(err))
 
+					render.JSON(w, r, response.Error("failed to check alias exist"))
+
 					return
 				}
+
+				fmt.Println(isExistAlias)
 
 				if !isExistAlias {
 					break
 				} else {
-					log.Warn("regenerating alias", sl.Err(err))
+					log.Warn("regenerating alias")
 				}
+			}
+		} else {
+			isExistAlias, err := urlSaver.CheckAliasExist(alias)
+			if err != nil {
+				log.Error("failed to check alias exist", sl.Err(err))
+
+				render.JSON(w, r, response.Error("failed to check alias exist"))
+
+				return
+			}
+
+			if isExistAlias {
+				responseOK(w, r, alias)
+
+				return
 			}
 		}
 
